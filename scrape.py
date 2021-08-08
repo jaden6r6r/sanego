@@ -16,6 +16,25 @@ import time
 import urllib.parse
 if __name__ == '__main__':
 
+    def scrape(urlSlug):
+        # given a url, get the required data. 
+        urlBase = 'https://www.sanego.de'
+        urlComposed = urlBase+urlSlug
+        headers = { "accept": "text/javascript, text/html, application/xml, text/xml, */*",
+                "accept-language": "en-US,en;q=0.9,ceb;q=0.8,fr;q=0.7,de",
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "sec-ch-ua": "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+                "x-requested-with": "XMLHttpRequest"}
+
+        r = requests.post(urlComposed,headers=headers)
+        r.encoding = r.apparent_encoding
+        print(r.encoding)
+
+
     #Get URLS of all areas of specialities and append to list 
     specialities = []
     url='https://www.sanego.de/Arzt/Fachgebiete/'
@@ -75,9 +94,9 @@ if __name__ == '__main__':
                     if a['href'] not in urls:
                         urls.append(a['href'])
                 for url in urls:
-                    print(url)
+                    scrape(url)
                     ##Parse and log. 
-                pageNum = pageNum + 1
+                # pageNum = pageNum + 1
             else:
                 valid = False
                 print(decoded,' ',pageNum, ' invalid page ', r.status_code)
