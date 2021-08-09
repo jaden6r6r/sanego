@@ -14,9 +14,30 @@ import json
 import bs4 as bs
 import time 
 import urllib.parse
+import re
+import csv
 if __name__ == '__main__':
 
     def scrape(urlSlug):
+        scrapedUrl = ''
+        scrapedName =''
+        scrapedMainSpeciality = ''
+        scrapedSubSpeciality = []
+        scrapedLocationClinic = ''
+        scrapedLocationUrl = ''
+        scrapedLocationAddress = ''
+        scrapedAddress = ''
+        scrapedPhone = ''
+        scrapedFax =''
+        scrapedMobile =''
+        scrapedEmail = ''
+        scrapedInsurance = '' 
+        scrapedPhotoURL = ''
+        scrapedRatingScore = ''
+        scrapedNoRatings ='' 
+        scrapedLanguages = ''
+
+
         # given a url, get the required data. 
         urlBase = 'https://www.sanego.de'
         urlComposed = urlBase+urlSlug
@@ -34,14 +55,13 @@ if __name__ == '__main__':
         r.encoding = r.apparent_encoding
         soup = bs.BeautifulSoup(r.content,'html.parser')
         #get URL 
-        print(urlComposed)
         header = soup.find('h1',text=True)
+        scrapedUrl = urlComposed
 
         #get name and speciality. 
         headerSplit = header.text.split(",")
-        name = headerSplit[0].lstrip()
-        mainSpeciality = headerSplit[2].lstrip()
-        print(mainSpeciality)
+        scrapedName = headerSplit[0].lstrip()
+        scrapedMainSpeciality = headerSplit[2].lstrip()
 
         #get sub specialities 
         contentClass = soup.find_all('div', class_='content')
@@ -49,18 +69,128 @@ if __name__ == '__main__':
         subItem = ulItem.find_all('li')
         subSpeciality = []
         for li in subItem:
-            if (li.text != mainSpeciality):
-                subSpeciality.append(li.text)
-        for sub in subSpeciality:
-            print(sub)
-
-        #get location
-        contentClass = soup.find('div', class_='contact')
-        ulItem = contentClass.find_all('p')
-        print(ulItem[0].text)
+            if (li.text != scrapedMainSpeciality):
+                scrapedSubSpeciality.append(li.text)
         
 
-        time.sleep(10)
+        #get clinic name + url 
+        contentClass = soup.find('div', class_='contact')
+        if (contentClass.find('a')):
+            urlLocation = contentClass.find('a')['href']
+            scrapedLocationUrl = contentClass.find('a')['href']
+            if (scrapedLocationUrl.find('font')!= -1):
+                print(scrapedLocationUrl.find('font'))
+                scrapedLocationClinic = scrapedLocationUrl.find('font')
+
+        #get Address
+        contentClass = soup.find('div', class_='contact')
+        ulItem = contentClass.find_all('p')
+        scrapedAddress = ulItem[0].text
+
+        #get telephone 
+        if(soup.find('span', itemprop='telephone')):
+            phone = soup.find('span', itemprop='telephone')
+            scrapedPhone = phone.text
+
+        #get fax
+        faxUnclean = soup.find_all('span')
+        for span in faxUnclean:
+            if 'Fax' in span.text:
+                faxClean = re.sub("[^0-9()]","",span.text)
+                scrapedFax = faxClean
+
+        #get mobile
+        mobileUnclean = soup.find_all('span')
+        for span in mobileUnclean:
+            if 'Mobile phone' in span.text:
+                mobileClean = re.sub("[^0-9()/]","",span.text)
+                scrapedMobile = mobileClean
+
+        #get email
+        emailUnclean = soup.find_all('span')
+        for span in emailUnclean:
+            if '@' in span.text:
+                scrapedEmail = span.text
+
+        #get insurance 
+        insuranceUnclean = soup.find_all('div', class_='content')
+        for font in insuranceUnclean:
+            if 'Versicherung' in font.text:
+                stripLeading = re.sub(r'^.*?Versicherung', 'Versicherung', font.text)
+                stripTrailing = stripLeading.split('.',1)
+                scrapedInsurance = stripTrailing[0].replace('Versicherung: ','')
+                break
+        
+        #getImage
+        imageTag = soup.find('a', class_='bigImg')
+        scrapedPhotoURL = imageTag['href']
+
+        #getRatingScore
+        score = soup.find_all('div', class_='secondDegInfo')
+        scrapedRatingScore = score[2].text
+
+        #getNoRatings
+        ratings = soup.find('div',class_='stats')
+        value = ratings.find('span', class_='value')
+        scrapedNoRatings = value.text
+
+        #getLanguages
+        languagesUnclean = soup.find_all('div', class_='content')
+        for font in languagesUnclean:
+            if 'Spricht:' in font.text:
+                stripLeading = re.sub(r'^.*?Spricht:', 'Spricht:', font.text)
+                stripTrailing = stripLeading.split('.',1)
+                scrapedLanguages = stripTrailing[0].replace('Spricht: ','')
+                break
+        
+
+
+        # print('url is: ',scrapedUrl)
+        # print('name is ', scrapedName)
+        # print('main speciality is ',scrapedMainSpeciality)
+        # for sub in scrapedSubSpeciality:
+        #     print(' sup speciality ',sub)
+        # print('address  ',scrapedAddress)
+        # if (len(scrapedLocationClinic)>0):
+        #     print('name of clinic ',scrapedLocationClinic)
+        # if (scrapedLocationUrl):
+        #     print('url for location ',scrapedLocationUrl)
+        # print('telephone is ', scrapedPhone)
+        # print('fax is ', scrapedFax)
+        # if (scrapedMobile!=''):
+        #     print('mobile is ', scrapedMobile)
+        # if(scrapedEmail!=''):
+        #     print('email is ', scrapedEmail)
+        # if(scrapedInsurance!=''):
+        #     print('insurance type, ', scrapedInsurance)
+        # print('photo URL', scrapedPhotoURL)
+        # print('rating is ',scrapedRatingScore)
+        # print('number of ratings ',scrapedNoRatings)
+        # print('languages spoken ', scrapedLanguages)
+        appendList = []
+        appendList.append(scrapedUrl)
+        appendList.append(scrapedName)
+        appendList.append(scrapedMainSpeciality)
+        appendList.append(scrapedSubSpeciality)
+        appendList.append(scrapedAddress)
+        appendList.append(scrapedLocationClinic)
+        appendList.append(scrapedLocationUrl)
+        appendList.append(scrapedPhone)
+        appendList.append(scrapedFax)
+        appendList.append(scrapedMobile)
+        appendList.append(scrapedEmail)
+        appendList.append(scrapedInsurance)
+        appendList.append(scrapedPhotoURL)
+        appendList.append(scrapedRatingScore)
+        appendList.append(scrapedNoRatings)
+        appendList.append(scrapedLanguages)
+
+
+
+        with open('output.csv', 'a') as csvFile:
+            wr = csv.writer(csvFile,dialect='excel')
+            # zip(scrapedUrl,scrapedName, scrapedMainSpeciality, scrapedSubSpeciality,scrapedAddress,scrapedLocationClinic,scrapedLocationUrl,scrapedPhone, scrapedFax,scrapedMobile,scrapedEmail,scrapedInsurance,scrapedPhotoURL,scrapedRatingScore,scrapedNoRatings,scrapedLanguages)
+            wr.writerow(appendList)
 
 
 
