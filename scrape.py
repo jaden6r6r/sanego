@@ -32,7 +32,37 @@ if __name__ == '__main__':
 
         r = requests.post(urlComposed,headers=headers)
         r.encoding = r.apparent_encoding
-        print(r.encoding)
+        soup = bs.BeautifulSoup(r.content,'html.parser')
+        #get URL 
+        print(urlComposed)
+        header = soup.find('h1',text=True)
+
+        #get name and speciality. 
+        headerSplit = header.text.split(",")
+        name = headerSplit[0].lstrip()
+        mainSpeciality = headerSplit[2].lstrip()
+        print(mainSpeciality)
+
+        #get sub specialities 
+        contentClass = soup.find_all('div', class_='content')
+        ulItem = contentClass[3].find('ul')
+        subItem = ulItem.find_all('li')
+        subSpeciality = []
+        for li in subItem:
+            if (li.text != mainSpeciality):
+                subSpeciality.append(li.text)
+        for sub in subSpeciality:
+            print(sub)
+
+        #get location
+        contentClass = soup.find('div', class_='contact')
+        ulItem = contentClass.find_all('p')
+        print(ulItem[0].text)
+        
+
+        time.sleep(10)
+
+
 
 
     #Get URLS of all areas of specialities and append to list 
